@@ -233,8 +233,17 @@ with st.form("prediction_form"):
 
 # ── Prediction ────────────────────────────────────────────────────────────────
 if submitted:
+    # -- Feature Engineering (must match notebook preprocessing) --
+    age_x_chol      = age * chol
+    bp_x_chol       = trestbps * chol
+    hr_reserve      = 220 - age - thalach
+    oldpeak_per_age = oldpeak / (age + 1)
+    thalach_ratio   = thalach / (220 - age)
+
     features = np.array([[age, sex, cp, trestbps, chol, fbs,
-                          restecg, thalach, exang, oldpeak, slope, ca, thal]])
+                          restecg, thalach, exang, oldpeak, slope, ca, thal,
+                          age_x_chol, bp_x_chol, hr_reserve,
+                          oldpeak_per_age, thalach_ratio]])
 
     if model is not None:
         prediction = model.predict(features)[0]
