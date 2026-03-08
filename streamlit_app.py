@@ -1,39 +1,34 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
+import pickle
 
-# Page config
-st.set_page_config(page_title="Streamlit Demo", page_icon="📊")
+# Load your pre-trained model
+# model = pickle.load(open('house_model.pkl', 'rb'))
 
-st.title("📊 My GitHub-Hosted App")
-st.markdown("""
-This app was built and deployed directly from GitHub! 
-Try moving the slider or changing the chart type below.
-""")
+st.title("🏡 House Price Predictor")
 
-# Sidebar settings
-st.sidebar.header("Settings")
-data_size = st.sidebar.slider("Number of rows", 10, 500, 100)
-chart_type = st.sidebar.selectbox("Select Chart Type", ["Line", "Bar", "Area"])
+# Create the input form
+with st.form("prediction_form"):
+    st.subheader("Enter Property Details")
+    
+    # Input widgets
+    size = st.number_input("Size (sq ft)", min_value=100, max_value=10000, value=1500)
+    bedrooms = st.slider("Number of Bedrooms", 1, 10, 3)
+    location = st.selectbox("Location", ["Urban", "Suburban", "Rural"])
+    
+    # Every form must have a submit button
+    submit_button = st.form_submit_button("Predict Price")
 
-# Generate random data
-data = pd.DataFrame(
-    np.random.randn(data_size, 3),
-    columns=['Category A', 'Category B', 'Category C']
-)
-
-# Display data and chart
-st.subheader("Live Data Preview")
-st.dataframe(data.head())
-
-st.subheader(f"Visualization: {chart_type} Chart")
-if chart_type == "Line":
-    st.line_chart(data)
-elif chart_type == "Bar":
-    st.bar_chart(data)
-else:
-    st.area_chart(data)
-
-if st.button("Celebrate!"):
-    st.balloons()
-    st.success("App updated successfully!")
+# Actions after clicking submit
+if submit_button:
+    # 1. Format inputs for the model
+    input_data = pd.DataFrame([[size, bedrooms, location]], 
+                              columns=['size', 'bedrooms', 'location'])
+    
+    # 2. (Optional) Apply your preprocessing/encoding here
+    
+    # 3. Make prediction
+    # prediction = model.predict(input_data)
+    prediction = 250000  # Placeholder for demo
+    
+    st.success(f"The estimated price is: ${prediction:,}")
