@@ -16,6 +16,22 @@ st.set_page_config(
 with open("style.css") as f:
     st.html(f"<style>{f.read()}</style>")
 
+# You can use a local file (e.g., "heart_loop.mp4") or a direct URL
+video_url = "https://www.youtube.com/embed/M-rHJbMryyU?si=HJTxUXDKHxJxSInK"
+
+st.markdown(
+    f"""
+    <div style="display: flex; justify-content: center; margin-top: -20px;">
+        <video width="300" autoplay loop muted playsinline>
+            <source src="{video_url}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+    """,
+    unsafe_allow_url=True, # Use allow_url if using a web link
+    unsafe_allow_html=True
+)
+
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown('<div class="main-title">Heart Disease Risk Predictor</div>', unsafe_allow_html=True)
 st.markdown('<div class="main-subtitle">Random Forest · Clinical Feature Analysis <br/> Contributors: Foysal· Ashraf · Tasnimul </div>', unsafe_allow_html=True)
