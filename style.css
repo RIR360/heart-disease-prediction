@@ -109,6 +109,10 @@ div[data-testid="stButton"] > button:hover {
     box-shadow: 0 4px 20px rgba(255,107,107,0.3);
 }
 
+div.stForm {
+    background: #0e1117 !important;
+}
+
 .disclaimer {
     font-size: 0.7rem;
     color: #99a0aa;
