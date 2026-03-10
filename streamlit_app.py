@@ -17,7 +17,7 @@ with open("style.css") as f:
     st.html(f"<style>{f.read()}</style>")
 
 # You can use a local file (e.g., "heart_loop.mp4") or a direct URL
-video_url = "https://www.youtube.com/embed/M-rHJbMryyU?si=HJTxUXDKHxJxSInK"
+video_url = "Heart Beating Animation.mp4"
 
 st.markdown(
     f"""
