@@ -17,19 +17,23 @@ with open("style.css") as f:
     st.html(f"<style>{f.read()}</style>")
 
 # You can use a local file (e.g., "heart_loop.mp4") or a direct URL
-video_url = "heart_loop.mp4"
+video_file = "heart_loop.mp4" 
 
-st.markdown(
-    f"""
-    <div style="display: flex; justify-content: center; margin-top: -20px;">
-        <video width="300" autoplay loop muted playsinline>
-            <source src="{video_url}" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+if os.path.exists(video_file):
+    bin_str = get_video_base64(video_file)
+    st.markdown(
+        f"""
+        <div style="display: flex; justify-content: center; margin-top: -20px;">
+            <video width="300" autoplay loop muted playsinline>
+                <source src="data:video/mp4;base64,{bin_str}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+else:
+    st.error(f"Video file '{video_file}' not found in the directory!")
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown('<div class="main-title">Heart Disease Risk Predictor</div>', unsafe_allow_html=True)
