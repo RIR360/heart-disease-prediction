@@ -17,24 +17,32 @@ st.set_page_config(
 with open("style.css") as f:
     st.html(f"<style>{f.read()}</style>")
 
-embed_url = f"https://www.youtube.com/embed/M-rHJbMryyU?si=j-qiJ1USzYhXgDGy"
+import base64
 
-components.html(
-    f"""
-    <div style="display: flex; justify-content: center;">
-        <iframe 
-            width="400" 
-            height="225" 
-            src="{embed_url}" 
-            frameborder="0" 
-            allow="autoplay; encrypted-media" 
-            allowfullscreen
-            style="pointer-events: none;"> <!-- pointer-events: none prevents clicking/pausing -->
-        </iframe>
-    </div>
-    """,
-    height=250,
-)
+# ── Local Video Function ──────────────────────────────────────────────────
+def get_video_base64(video_path):
+    with open(video_path, "rb") as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+# Use your actual file name here
+video_file = "heart_loop.mp4" 
+
+if os.path.exists(video_file):
+    bin_str = get_video_base64(video_file)
+    st.markdown(
+        f"""
+        <div style="display: flex; justify-content: center; margin-top: -20px;">
+            <video width="300" autoplay loop muted playsinline>
+                <source src="data:video/mp4;base64,{bin_str}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+else:
+    st.error(f"Video file '{video_file}' not found in the directory!")
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown('<div class="main-title">Heart Disease Risk Predictor</div>', unsafe_allow_html=True)
