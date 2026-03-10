@@ -33,7 +33,7 @@ if os.path.exists(video_file):
     st.markdown(
         f"""
         <div style="display: flex; justify-content: center; margin-top: -20px;">
-            <video width="300" autoplay loop muted playsinline>
+            <video style="width: 100%; height: auto; display: block;" autoplay loop muted playsinline>
                 <source src="data:video/mp4;base64,{bin_str}" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
