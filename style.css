@@ -23,7 +23,7 @@ html, body, [class*="css"] {
 .main-subtitle {
     font-family: 'DM Mono', monospace;
     font-size: 0.75rem;
-    color: #8b949e;
+    color: #b9c0c7;
     letter-spacing: 0.15em;
     text-transform: uppercase;
     margin-bottom: 2rem;
@@ -32,13 +32,13 @@ html, body, [class*="css"] {
 /* Section headers */
 .section-header {
     font-family: 'DM Mono', monospace;
-    font-size: 0.8rem;
+    font-size: 0.9em;
     color: #ff6b6b;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     padding: 0.4rem 0;
     border-bottom: 1px solid #21262d;
-    margin: 1.5rem 0 1rem 0;
+    margin: 1rem 0 1rem 0;
 }
 
 /* Card */
@@ -110,7 +110,7 @@ div[data-testid="stButton"] > button:hover {
 
 .disclaimer {
     font-size: 0.7rem;
-    color: #484f58;
+    color: #99a0aa;
     font-family: 'DM Mono', monospace;
     text-align: center;
     margin-top: 1.5rem;
