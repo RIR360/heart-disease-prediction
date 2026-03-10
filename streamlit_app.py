@@ -28,7 +28,6 @@ st.markdown(
         </video>
     </div>
     """,
-    unsafe_allow_url=True, # Use allow_url if using a web link
     unsafe_allow_html=True
 )
 
