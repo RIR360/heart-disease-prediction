@@ -1,5 +1,2 @@
 streamlit
 scikit-learn
-pyvista
-stpyvista
-trame

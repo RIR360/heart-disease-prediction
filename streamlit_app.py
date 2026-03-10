@@ -3,8 +3,6 @@ import numpy as np
 import pickle
 import os
 import sklearn
-import pyvista as pv
-from stpyvista import stpyvista
 from sklearn.ensemble import RandomForestClassifier
 
 # ── Page config ──────────────────────────────────────────────────────────────
@@ -17,51 +15,6 @@ st.set_page_config(
 # ── Custom CSS ────────────────────────────────────────────────────────────────
 with open("style.css") as f:
     st.html(f"<style>{f.read()}</style>")
-
-# ── 3D LOVE SHAPE ANIMATION ──────────────────────────────────────────────────
-if 'phase' not in st.session_state:
-    st.session_state.phase = 0
-
-def create_heart_mesh():
-    """Generates a parametric 3D heart shape."""
-    res = 100
-    t = np.linspace(0, 2 * np.pi, res)
-    u = np.linspace(0, np.pi, res)
-    T, U = np.meshgrid(t, u)
-
-    # Parametric equations for a 3D Heart
-    X = 16 * np.sin(T)**3 * np.sin(U)
-    Y = (13 * np.cos(T) - 5 * np.cos(2*T) - 2 * np.cos(3*T) - np.cos(4*T)) * np.sin(U)
-    Z = 15 * np.cos(U)
-    
-    # Create the mesh
-    grid = pv.StructuredGrid(X, Y, Z)
-    return grid.extract_surface()
-
-# Setup Plotter
-plotter = pv.Plotter(window_size=[400, 300])
-plotter.background_color = "white"
-
-# Generate and animate heart
-heart = create_heart_mesh()
-
-# Heartbeat: Pulsating scale effect
-pulse = 1.0 + 0.1 * np.abs(np.sin(st.session_state.phase))
-heart.scale([pulse, pulse, pulse], inplace=False)
-
-# Rotate: Update camera azimuth
-plotter.camera.azimuth += (st.session_state.phase * 20) % 360
-
-plotter.add_mesh(heart, color='crimson', smooth_shading=True)
-plotter.view_isometric()
-
-# Render at the top
-stpyvista(plotter, key="love_heart")
-
-# Animation loop
-st.session_state.phase += 0.1
-time.sleep(0.05)
-st.rerun()
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown('<div class="main-title">Heart Disease Risk Predictor</div>', unsafe_allow_html=True)
