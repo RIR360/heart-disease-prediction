@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import numpy as np
 import pickle
 import os
@@ -16,24 +17,24 @@ st.set_page_config(
 with open("style.css") as f:
     st.html(f"<style>{f.read()}</style>")
 
-# You can use a local file (e.g., "heart_loop.mp4") or a direct URL
-video_file = "heart_loop.mp4" 
+embed_url = f"https://www.youtube.com/embed/M-rHJbMryyU?si=j-qiJ1USzYhXgDGy"
 
-if os.path.exists(video_file):
-    bin_str = get_video_base64(video_file)
-    st.markdown(
-        f"""
-        <div style="display: flex; justify-content: center; margin-top: -20px;">
-            <video width="300" autoplay loop muted playsinline>
-                <source src="data:video/mp4;base64,{bin_str}" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-else:
-    st.error(f"Video file '{video_file}' not found in the directory!")
+components.html(
+    f"""
+    <div style="display: flex; justify-content: center;">
+        <iframe 
+            width="400" 
+            height="225" 
+            src="{embed_url}" 
+            frameborder="0" 
+            allow="autoplay; encrypted-media" 
+            allowfullscreen
+            style="pointer-events: none;"> <!-- pointer-events: none prevents clicking/pausing -->
+        </iframe>
+    </div>
+    """,
+    height=250,
+)
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown('<div class="main-title">Heart Disease Risk Predictor</div>', unsafe_allow_html=True)
