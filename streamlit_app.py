@@ -13,132 +13,13 @@ st.set_page_config(
 )
 
 # ── Custom CSS ────────────────────────────────────────────────────────────────
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
-
-html, body, [class*="css"] {
-    font-family: 'DM Sans', sans-serif;
-}
-
-/* Background */
-.stApp {
-    background: #0d1117;
-    color: #e6edf3;
-}
-
-/* Title */
-.main-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2.8rem;
-    font-weight: 400;
-    color: #ff6b6b;
-    letter-spacing: -0.5px;
-    line-height: 1.1;
-    margin-bottom: 0.2rem;
-}
-.main-subtitle {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.75rem;
-    color: #8b949e;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 2rem;
-}
-
-/* Section headers */
-.section-header {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    color: #ff6b6b;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    padding: 0.4rem 0;
-    border-bottom: 1px solid #21262d;
-    margin: 1.5rem 0 1rem 0;
-}
-
-/* Card */
-.card {
-    background: #161b22;
-    border: 1px solid #21262d;
-    border-radius: 10px;
-    padding: 1.5rem 2rem;
-    margin-bottom: 1.5rem;
-}
-
-/* Result boxes */
-.result-positive {
-    background: linear-gradient(135deg, #3d0000 0%, #1a0000 100%);
-    border: 1px solid #ff4444;
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-}
-.result-negative {
-    background: linear-gradient(135deg, #003d1a 0%, #001a0d 100%);
-    border: 1px solid #22c55e;
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-}
-.result-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-}
-.result-detail {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.8rem;
-    color: #8b949e;
-    letter-spacing: 0.05em;
-}
-
-/* Divider */
-hr { border-color: #21262d; }
-
-/* Streamlit widget overrides */
-div[data-testid="stNumberInput"] label,
-div[data-testid="stSelectbox"] label,
-div[data-testid="stSlider"] label {
-    font-size: 0.8rem !important;
-    color: #c9d1d9 !important;
-    font-family: 'DM Sans', sans-serif !important;
-}
-
-div[data-testid="stButton"] > button {
-    background: #ff6b6b;
-    color: #0d1117;
-    border: none;
-    border-radius: 8px;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.85rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    padding: 0.65rem 2rem;
-    width: 100%;
-    transition: all 0.2s ease;
-}
-div[data-testid="stButton"] > button:hover {
-    background: #ff4444;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 20px rgba(255,107,107,0.3);
-}
-
-.disclaimer {
-    font-size: 0.7rem;
-    color: #484f58;
-    font-family: 'DM Mono', monospace;
-    text-align: center;
-    margin-top: 1.5rem;
-    line-height: 1.6;
-}
-</style>
-""", unsafe_allow_html=True)
+with open("style.css") as f:
+    st.html(f"<style>{f.read()}</style>")
 
 # ── Header ────────────────────────────────────────────────────────────────────
-st.markdown('<div class="main-title">🫀 Heart Risk<br>Predictor</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">Heart Disease Risk Predictor</div>', unsafe_allow_html=True)
 st.markdown('<div class="main-subtitle">Random Forest · Clinical Feature Analysis</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-subtitle">Contributors · Foysal· Ashraf · Tasnimul</div>', unsafe_allow_html=True)
 
 # ── Load model ────────────────────────────────────────────────────────────────
 @st.cache_resource
