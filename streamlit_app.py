@@ -124,167 +124,232 @@ with st.form("prediction_form"):
 # ── Human Body Risk Visualizer ────────────────────────────────────────────────
 def render_human_risk(risk_pct: float, is_high_risk: bool):
     """
-    Renders an SVG human silhouette filled from bottom to top based on risk_pct (0–100).
-    Uses a clipPath so the fill color reveals the body shape progressively.
+    Renders via components.html() (iframe) so SVG defs/clipPath are never sanitized.
     """
-    # Color palette based on risk level
     if risk_pct < 30:
-        fill_color_top   = "#22c55e"   # green
-        fill_color_bot   = "#16a34a"
-        glow_color       = "rgba(34,197,94,0.35)"
-        label_color      = "#86efac"
-        risk_label       = "LOW RISK"
+        fill_top, fill_bot = "#22c55e", "#16a34a"
+        glow   = "rgba(34,197,94,0.4)"
+        label_color = "#86efac"
+        risk_label  = "LOW RISK"
     elif risk_pct < 60:
-        fill_color_top   = "#f59e0b"   # amber
-        fill_color_bot   = "#d97706"
-        glow_color       = "rgba(245,158,11,0.35)"
-        label_color      = "#fcd34d"
-        risk_label       = "MODERATE RISK"
+        fill_top, fill_bot = "#f59e0b", "#d97706"
+        glow   = "rgba(245,158,11,0.4)"
+        label_color = "#fcd34d"
+        risk_label  = "MODERATE RISK"
     else:
-        fill_color_top   = "#ef4444"   # red
-        fill_color_bot   = "#b91c1c"
-        glow_color       = "rgba(239,68,68,0.4)"
-        label_color      = "#fca5a5"
-        risk_label       = "HIGH RISK"
+        fill_top, fill_bot = "#ef4444", "#b91c1c"
+        glow   = "rgba(239,68,68,0.45)"
+        label_color = "#fca5a5"
+        risk_label  = "HIGH RISK"
 
-    # SVG viewBox is 0 0 100 220 (100 wide, 220 tall)
-    # Fill rect starts from bottom: y = 220*(1 - risk_pct/100)
-    total_height = 220
-    fill_y = total_height * (1 - risk_pct / 100)
-    fill_h = total_height * (risk_pct / 100)
+    H = 220.0
+    fill_y = H * (1 - risk_pct / 100)
+    fill_h = H * (risk_pct / 100)
+    fill_y_start = min(fill_y + 30, H)
+    fill_h_start = max(fill_h - 30, 0)
 
-    # Pulse animation speed based on risk
-    pulse_dur = "0.7s" if is_high_risk else "1.4s"
+    pulse_dur = "0.75s" if is_high_risk else "1.5s"
 
-    html = f"""
-    <div class="risk-viz-wrapper">
+    # Single compound path for the entire human silhouette (used in clipPath)
+    # Drawn in one <path> so clipPath works reliably across all browsers
+    BODY_PATH = (
+        # Head
+        "M50,4 C43,4 38,10 38,18 C38,26 43,32 50,32 C57,32 62,26 62,18 C62,10 57,4 50,4Z "
+        # Neck
+        "M45,32 L45,40 L55,40 L55,32Z "
+        # Torso + shoulders
+        "M28,40 C22,44 18,56 20,72 L22,84 L78,84 L80,72 C82,56 78,44 72,40 "
+        "C66,37 58,35 50,35 C42,35 34,37 28,40Z "
+        # Left upper arm
+        "M20,44 C12,50 8,66 10,80 C11,86 14,89 18,87 C20,86 22,83 22,78 "
+        "L24,60 C25,52 24,47 20,44Z "
+        # Right upper arm
+        "M80,44 C88,50 92,66 90,80 C89,86 86,89 82,87 C80,86 78,83 78,78 "
+        "L76,60 C75,52 76,47 80,44Z "
+        # Left forearm + hand
+        "M10,80 C8,94 8,108 10,120 C11,126 14,128 17,126 C19,124 20,120 19,114 "
+        "L18,92 C16,86 13,82 10,80Z "
+        "M7,122 C5,126 6,132 10,133 C14,134 17,130 16,126Z "
+        # Right forearm + hand
+        "M90,80 C92,94 92,108 90,120 C89,126 86,128 83,126 C81,124 80,120 81,114 "
+        "L82,92 C84,86 87,82 90,80Z "
+        "M93,122 C95,126 94,132 90,133 C86,134 83,130 84,126Z "
+        # Hips
+        "M22,84 C20,94 24,100 30,102 L70,102 C76,100 80,94 78,84Z "
+        # Left thigh
+        "M30,102 C26,116 26,134 28,150 C29,157 34,158 38,156 C42,154 43,149 42,142 "
+        "L40,118 C38,108 35,103 30,102Z "
+        # Right thigh
+        "M70,102 C74,116 74,134 72,150 C71,157 66,158 62,156 C58,154 57,149 58,142 "
+        "L60,118 C62,108 65,103 70,102Z "
+        # Left shin + foot
+        "M28,150 C26,166 26,182 28,196 C29,202 33,204 37,202 C41,200 42,195 41,188 "
+        "L40,162 C39,155 35,151 28,150Z "
+        "M22,200 C20,204 24,208 30,207 C36,206 39,202 37,199Z "
+        # Right shin + foot
+        "M72,150 C74,166 74,182 72,196 C71,202 67,204 63,202 C59,200 58,195 59,188 "
+        "L60,162 C61,155 65,151 72,150Z "
+        "M78,200 C80,204 76,208 70,207 C64,206 61,202 63,199Z"
+    )
 
-      <!-- Risk label above -->
-      <div class="risk-label" style="color:{label_color};">{risk_label}</div>
+    pulse_svg = ""
+    if is_high_risk:
+        pulse_svg = f"""
+        <circle cx="50" cy="62" r="5" fill="{fill_top}" opacity="0.8">
+          <animate attributeName="r" values="3;10;3" dur="{pulse_dur}" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.8;0;0.8" dur="{pulse_dur}" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="50" cy="62" r="3" fill="white" opacity="0.95">
+          <animate attributeName="opacity" values="1;0.2;1" dur="{pulse_dur}" repeatCount="indefinite"/>
+        </circle>"""
 
-      <!-- Percentage counter -->
-      <div class="risk-percent" style="color:{label_color};">{risk_pct:.1f}<span class="pct-sign">%</span></div>
+    html = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap');
+  * {{ margin:0; padding:0; box-sizing:border-box; }}
+  body {{
+    background: #111520;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 20px 24px;
+    font-family: 'DM Sans', sans-serif;
+    gap: 10px;
+  }}
+  .risk-label {{
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: {label_color};
+  }}
+  .risk-percent {{
+    font-family: 'Syne', sans-serif;
+    font-size: 58px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: {label_color};
+  }}
+  .pct-sign {{
+    font-size: 28px;
+    font-weight: 600;
+    vertical-align: super;
+    margin-left: 2px;
+  }}
+  .body-wrap {{
+    filter: drop-shadow(0 0 20px {glow});
+  }}
+  .meter-wrap {{
+    width: 240px;
+    margin-top: 6px;
+  }}
+  .meter-track {{
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 99px;
+    overflow: hidden;
+  }}
+  .meter-fill {{
+    height: 100%;
+    width: {risk_pct}%;
+    background: linear-gradient(90deg, {fill_bot}, {fill_top});
+    border-radius: 99px;
+    animation: barGrow 1.3s cubic-bezier(.25,.1,.25,1) both;
+  }}
+  @keyframes barGrow {{
+    from {{ width: 0%; }}
+    to   {{ width: {risk_pct}%; }}
+  }}
+  .meter-labels {{
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+    font-size: 10px;
+    color: #64748b;
+    letter-spacing: 0.05em;
+  }}
+</style>
+</head>
+<body>
+  <div class="risk-label">{risk_label}</div>
+  <div class="risk-percent">{risk_pct:.1f}<span class="pct-sign">%</span></div>
 
-      <!-- SVG Body -->
-      <div class="svg-body-container" style="filter: drop-shadow(0 0 18px {glow_color});">
-        <svg viewBox="0 0 100 220" xmlns="http://www.w3.org/2000/svg" class="body-svg">
-          <defs>
-            <!-- Gradient for fill -->
-            <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="{fill_color_top}" stop-opacity="1"/>
-              <stop offset="100%" stop-color="{fill_color_bot}" stop-opacity="0.85"/>
-            </linearGradient>
+  <div class="body-wrap">
+    <svg viewBox="0 0 100 220" width="170" height="374"
+         xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="{fill_top}" stop-opacity="1"/>
+          <stop offset="100%" stop-color="{fill_bot}" stop-opacity="0.9"/>
+        </linearGradient>
 
-            <!-- ClipPath = the human body silhouette -->
-            <clipPath id="bodyClip">
-              <!-- HEAD -->
-              <ellipse cx="50" cy="18" rx="12" ry="14"/>
-              <!-- NECK -->
-              <rect x="44" y="30" width="12" height="8" rx="3"/>
-              <!-- TORSO -->
-              <path d="M28,38 Q22,55 24,80 L76,80 Q78,55 72,38 Q62,34 50,34 Q38,34 28,38Z"/>
-              <!-- LEFT ARM -->
-              <path d="M24,40 Q14,50 12,75 Q11,82 15,84 Q19,86 21,80 L26,58 Q28,48 28,42Z"/>
-              <!-- RIGHT ARM -->
-              <path d="M76,40 Q86,50 88,75 Q89,82 85,84 Q81,86 79,80 L74,58 Q72,48 72,42Z"/>
-              <!-- LEFT FOREARM + HAND -->
-              <path d="M15,84 Q11,100 10,115 Q9,122 12,124 Q14,126 16,122 L20,106 Q21,96 21,88Z"/>
-              <ellipse cx="11" cy="126" rx="4" ry="6"/>
-              <!-- RIGHT FOREARM + HAND -->
-              <path d="M85,84 Q89,100 90,115 Q91,122 88,124 Q86,126 84,122 L80,106 Q79,96 79,88Z"/>
-              <ellipse cx="89" cy="126" rx="4" ry="6"/>
-              <!-- HIPS/PELVIS -->
-              <path d="M24,80 Q22,92 28,96 L72,96 Q78,92 76,80Z"/>
-              <!-- LEFT LEG -->
-              <path d="M28,96 Q24,120 26,145 Q27,152 32,152 Q37,152 38,145 L40,120 Q40,108 38,96Z"/>
-              <!-- RIGHT LEG -->
-              <path d="M72,96 Q76,120 74,145 Q73,152 68,152 Q63,152 62,145 L60,120 Q60,108 62,96Z"/>
-              <!-- LEFT SHIN + FOOT -->
-              <path d="M26,145 Q24,168 26,188 Q27,196 32,196 Q37,196 38,188 L38,165 Q38,155 38,148Z"/>
-              <ellipse cx="30" cy="196" rx="8" ry="5"/>
-              <!-- RIGHT SHIN + FOOT -->
-              <path d="M74,145 Q76,168 74,188 Q73,196 68,196 Q63,196 62,188 L62,165 Q62,155 62,148Z"/>
-              <ellipse cx="70" cy="196" rx="8" ry="5"/>
-            </clipPath>
+        <clipPath id="bodyClip">
+          <path d="{BODY_PATH}"/>
+        </clipPath>
 
-            <!-- Shimmer animation mask -->
-            <linearGradient id="shimmer" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stop-color="white" stop-opacity="0"/>
-              <stop offset="50%" stop-color="white" stop-opacity="0.15"/>
-              <stop offset="100%" stop-color="white" stop-opacity="0"/>
-              <animateTransform attributeName="gradientTransform" type="translate"
-                from="-1 0" to="2 0" dur="2s" repeatCount="indefinite"/>
-            </linearGradient>
-          </defs>
+        <linearGradient id="shimmerGrad" x1="0" y1="0" x2="1" y2="0"
+                        gradientUnits="userSpaceOnUse">
+          <stop offset="0%"   stop-color="white" stop-opacity="0"/>
+          <stop offset="50%"  stop-color="white" stop-opacity="0.12"/>
+          <stop offset="100%" stop-color="white" stop-opacity="0"/>
+          <animateTransform attributeName="gradientTransform" type="translate"
+            values="-100 0; 200 0" dur="2.5s" repeatCount="indefinite"/>
+        </linearGradient>
+      </defs>
 
-          <!-- ① Outline/ghost of the full body (dim) -->
-          <g clip-path="url(#bodyClip)">
-            <rect x="0" y="0" width="100" height="220" fill="rgba(255,255,255,0.06)"/>
-          </g>
+      <!-- Ghost body (dim outline bg) -->
+      <g clip-path="url(#bodyClip)">
+        <rect x="0" y="0" width="100" height="220" fill="rgba(255,255,255,0.055)"/>
+      </g>
 
-          <!-- ② Filled portion from bottom -->
-          <g clip-path="url(#bodyClip)">
-            <rect x="0" y="{fill_y:.2f}" width="100" height="{fill_h:.2f}" fill="url(#fillGrad)">
-              <animate attributeName="y" from="{min(fill_y + 10, total_height):.2f}" to="{fill_y:.2f}"
-                dur="1.2s" fill="freeze" calcMode="spline"
-                keySplines="0.25 0.1 0.25 1"/>
-              <animate attributeName="height" from="{max(fill_h - 10, 0):.2f}" to="{fill_h:.2f}"
-                dur="1.2s" fill="freeze" calcMode="spline"
-                keySplines="0.25 0.1 0.25 1"/>
-            </rect>
-            <!-- Shimmer overlay -->
-            <rect x="0" y="{fill_y:.2f}" width="100" height="{fill_h:.2f}" fill="url(#shimmer)"/>
-          </g>
+      <!-- Animated fill rising from bottom -->
+      <g clip-path="url(#bodyClip)">
+        <rect x="0" y="{fill_y:.2f}" width="100" height="{fill_h:.2f}"
+              fill="url(#fillGrad)">
+          <animate attributeName="y"
+            from="{fill_y_start:.2f}" to="{fill_y:.2f}"
+            dur="1.3s" fill="freeze"
+            calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+          <animate attributeName="height"
+            from="{fill_h_start:.2f}" to="{fill_h:.2f}"
+            dur="1.3s" fill="freeze"
+            calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+        </rect>
+        <!-- Shimmer sweep -->
+        <rect x="0" y="{fill_y:.2f}" width="100" height="{fill_h:.2f}"
+              fill="url(#shimmerGrad)"/>
+      </g>
 
-          <!-- ③ Body outline stroke -->
-          <g clip-path="url(#bodyClip)">
-            <rect x="0" y="0" width="100" height="220" fill="none"/>
-          </g>
-          <!-- Stroke the silhouette edges -->
-          <g fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="0.8">
-            <ellipse cx="50" cy="18" rx="12" ry="14"/>
-            <rect x="44" y="30" width="12" height="8" rx="3"/>
-            <path d="M28,38 Q22,55 24,80 L76,80 Q78,55 72,38 Q62,34 50,34 Q38,34 28,38Z"/>
-            <path d="M24,40 Q14,50 12,75 Q11,82 15,84 Q19,86 21,80 L26,58 Q28,48 28,42Z"/>
-            <path d="M76,40 Q86,50 88,75 Q89,82 85,84 Q81,86 79,80 L74,58 Q72,48 72,42Z"/>
-            <path d="M15,84 Q11,100 10,115 Q9,122 12,124 Q14,126 16,122 L20,106 Q21,96 21,88Z"/>
-            <ellipse cx="11" cy="126" rx="4" ry="6"/>
-            <path d="M85,84 Q89,100 90,115 Q91,122 88,124 Q86,126 84,122 L80,106 Q79,96 79,88Z"/>
-            <ellipse cx="89" cy="126" rx="4" ry="6"/>
-            <path d="M24,80 Q22,92 28,96 L72,96 Q78,92 76,80Z"/>
-            <path d="M28,96 Q24,120 26,145 Q27,152 32,152 Q37,152 38,145 L40,120 Q40,108 38,96Z"/>
-            <path d="M72,96 Q76,120 74,145 Q73,152 68,152 Q63,152 62,145 L60,120 Q60,108 62,96Z"/>
-            <path d="M26,145 Q24,168 26,188 Q27,196 32,196 Q37,196 38,188 L38,165 Q38,155 38,148Z"/>
-            <ellipse cx="30" cy="196" rx="8" ry="5"/>
-            <path d="M74,145 Q76,168 74,188 Q73,196 68,196 Q63,196 62,188 L62,165 Q62,155 62,148Z"/>
-            <ellipse cx="70" cy="196" rx="8" ry="5"/>
-          </g>
+      <!-- Outline stroke on top -->
+      <path d="{BODY_PATH}"
+            fill="none"
+            stroke="rgba(255,255,255,0.2)"
+            stroke-width="0.7"
+            stroke-linejoin="round"/>
 
-          <!-- ④ Heartbeat pulse on chest when high risk -->
-          {"" if not is_high_risk else f'''
-          <circle cx="50" cy="58" r="6" fill="{fill_color_top}" opacity="0.7">
-            <animate attributeName="r" values="4;9;4" dur="{pulse_dur}" repeatCount="indefinite"/>
-            <animate attributeName="opacity" values="0.7;0;0.7" dur="{pulse_dur}" repeatCount="indefinite"/>
-          </circle>
-          <circle cx="50" cy="58" r="3" fill="white" opacity="0.9">
-            <animate attributeName="opacity" values="1;0.3;1" dur="{pulse_dur}" repeatCount="indefinite"/>
-          </circle>
-          '''}
-        </svg>
-      </div>
+      <!-- Heart pulse dot (high risk only) -->
+      {pulse_svg}
+    </svg>
+  </div>
 
-      <!-- Risk meter bar below -->
-      <div class="risk-meter-bar">
-        <div class="risk-meter-track">
-          <div class="risk-meter-fill" style="width:{risk_pct}%; background: linear-gradient(90deg, {fill_color_bot}, {fill_color_top});"></div>
-        </div>
-        <div class="risk-meter-labels">
-          <span>0%</span><span>50%</span><span>100%</span>
-        </div>
-      </div>
-
+  <div class="meter-wrap">
+    <div class="meter-track">
+      <div class="meter-fill"></div>
     </div>
-    """
+    <div class="meter-labels">
+      <span>0%</span><span>50%</span><span>100%</span>
+    </div>
+  </div>
+
+</body>
+</html>"""
+
     return html
 
 
