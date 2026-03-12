@@ -437,7 +437,7 @@ if submitted:
     st.markdown("<br>", unsafe_allow_html=True)
 
     # ── Human body visualizer ──
-    viz_html = render_human_risk(risk_pct, is_high_risk=(prediction == 1))
+    viz_html = render_risk_viz(risk_pct, is_high_risk=(prediction == 1))
     st.markdown(viz_html, unsafe_allow_html=True)
 
     # ── Text result card ──
