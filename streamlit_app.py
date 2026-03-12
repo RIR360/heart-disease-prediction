@@ -42,7 +42,7 @@ if os.path.exists(video_file):
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown('<div class="main-title">Heart Disease Risk Predictor</div>', unsafe_allow_html=True)
-st.markdown('<div class="main-subtitle">Random Forest · Clinical Feature Analysis <br/> Contributors: Foysal · Ashraf · Tasnimul</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-subtitle">Random Forest <br/> Clinical Feature Analysis <br/> Contributors: <br/> Foysal · Ashraf · Tasnimul</div>', unsafe_allow_html=True)
 
 # ── Load model ────────────────────────────────────────────────────────────────
 @st.cache_resource
