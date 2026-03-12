@@ -1,9 +1,11 @@
+import time
 import streamlit as st
 import streamlit.components.v1 as components
 import numpy as np
 import pickle
 import os
 import base64
+from report import generate_report
 
 # ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -285,7 +287,6 @@ if submitted:
 </div>
 """, unsafe_allow_html=True)
 
-    import time
     time.sleep(1.2)
     loading.empty()
     viz_html = render_risk_viz(
@@ -294,6 +295,23 @@ if submitted:
         thalach=thalach, oldpeak=oldpeak, ca=ca
     )
     st.markdown(viz_html, unsafe_allow_html=True)
+
+    # ── PDF Report download ──
+    patient_data = {
+        'age': age, 'sex': sex, 'cp': cp, 'trestbps': trestbps,
+        'chol': chol, 'fbs': fbs, 'restecg': restecg, 'thalach': thalach,
+        'exang': exang, 'oldpeak': oldpeak, 'slope': slope,
+        'ca': ca, 'thal': thal, 'prediction': int(prediction)
+    }
+    pdf_bytes = generate_report(patient_data, risk_pct)
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.download_button(
+        label="📄  Download Full PDF Report",
+        data=pdf_bytes,
+        file_name=f"heart_risk_report_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+        mime="application/pdf",
+        use_container_width=True,
+    )
 
     with st.expander("View input summary"):
         labels = ["Age","Sex","Chest Pain Type","Resting BP","Cholesterol",
