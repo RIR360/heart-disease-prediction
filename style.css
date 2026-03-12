@@ -1,45 +1,255 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+/* ═══════════════════════════════════════════════════════════════
+   Heart Disease Risk Predictor — style.css
+   Dark medical-tech aesthetic · DM Sans + Syne
+   ═══════════════════════════════════════════════════════════════ */
 
-html, body, [class*="css"] {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 17px;
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+/* ── Variables ─────────────────────────────────────────────────── */
+:root {
+  --bg-base:        #0a0d12;
+  --bg-card:        #111520;
+  --bg-card-alt:    #161b27;
+  --border:         rgba(255,255,255,0.08);
+  --accent-red:     #ef4444;
+  --accent-green:   #22c55e;
+  --accent-amber:   #f59e0b;
+  --text-primary:   #f1f5f9;
+  --text-muted:     #64748b;
+  --font-display:   'Syne', sans-serif;
+  --font-body:      'DM Sans', sans-serif;
 }
 
-/* Background */
-.stApp {
-    background: #000;
-    color: #e6edf3;
+/* ── Global reset ──────────────────────────────────────────────── */
+html, body, [data-testid="stAppViewContainer"] {
+  background-color: var(--bg-base) !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-body) !important;
 }
 
-/* Title */
+[data-testid="stHeader"] { background: transparent !important; }
+[data-testid="stToolbar"] { display: none !important; }
+footer { display: none !important; }
+
+/* ── Main container ────────────────────────────────────────────── */
+.block-container {
+  max-width: 760px !important;
+  padding: 2rem 2rem 4rem !important;
+}
+
+/* ── Headings ──────────────────────────────────────────────────── */
 .main-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2.8rem;
-    font-weight: 400;
-    color: #ff6b6b;
-    letter-spacing: -0.5px;
-    line-height: 1.1;
-    margin-bottom: 0.2rem;
-}
-.main-subtitle {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.75rem;
-    color: #b9c0c7;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 2rem;
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+  text-align: center;
 }
 
-/* Section headers */
+.main-subtitle {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+/* ── Section headers ───────────────────────────────────────────── */
 .section-header {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.9em;
-    color: #ff6b6b;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    padding: 0.4rem 0;
-    border-bottom: 1px solid #21262d;
-    margin: 1rem 0 1rem 0;
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  padding-top: 1.2rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Form elements ─────────────────────────────────────────────── */
+[data-testid="stForm"] {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 16px !important;
+  padding: 1.5rem !important;
+}
+
+/* Input fields */
+[data-testid="stNumberInput"] input,
+[data-testid="stSelectbox"] > div > div {
+  background: var(--bg-card-alt) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-body) !important;
+}
+
+[data-testid="stNumberInput"] input:focus,
+[data-testid="stSelectbox"] > div > div:focus {
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+}
+
+/* Labels */
+[data-testid="stForm"] label,
+.stSelectbox label,
+.stNumberInput label {
+  font-family: var(--font-body) !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  color: var(--text-muted) !important;
+  letter-spacing: 0.02em !important;
+}
+
+/* Submit button */
+[data-testid="stFormSubmitButton"] button {
+  width: 100% !important;
+  background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+  color: white !important;
+  font-family: var(--font-display) !important;
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 0.85rem 2rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  text-transform: uppercase !important;
+}
+
+[data-testid="stFormSubmitButton"] button:hover {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HUMAN BODY RISK VISUALIZER
+   ═══════════════════════════════════════════════════════════════ */
+
+.risk-viz-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2.5rem 1.5rem 2rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  margin: 1rem 0 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle grid bg inside card */
+.risk-viz-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+}
+
+/* Risk label */
+.risk-label {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  position: relative;
+  z-index: 1;
+}
+
+/* Percentage number */
+.risk-percent {
+  font-family: var(--font-display);
+  font-size: 3.8rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.pct-sign {
+  font-size: 1.8rem;
+  font-weight: 600;
+  vertical-align: super;
+  margin-left: 2px;
+}
+
+/* SVG container */
+.svg-body-container {
+  position: relative;
+  z-index: 1;
+  transition: filter 0.4s ease;
+}
+
+.body-svg {
+  width: 160px;
+  height: auto;
+  display: block;
+}
+
+/* ── Risk meter bar ─────────────────────────────────────────────── */
+.risk-meter-bar {
+  width: 100%;
+  max-width: 280px;
+  position: relative;
+  z-index: 1;
+  margin-top: 0.5rem;
+}
+
+.risk-meter-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.risk-meter-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 1.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+  position: relative;
+}
+
+/* Animated shimmer on fill bar */
+.risk-meter-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: barShimmer 2s infinite;
+}
+
+@keyframes barShimmer {
+  from { left: -100%; }
+  to   { left: 100%;  }
+}
+
+.risk-meter-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -269,89 +479,25 @@ html, body, [class*="css"] {
   100% { transform: scale(0.93); box-shadow: 0 0 0 0   rgba(239,68,68,0);   }
 }
 
-
-/* Card */
-.card {
-    background: #161b22;
-    border: 1px solid #21262d;
-    border-radius: 10px;
-    padding: 1.5rem 2rem;
-    margin-bottom: 1.5rem;
-}
-
-/* Result boxes */
-.result-positive {
-    background: linear-gradient(135deg, #3d0000 0%, #1a0000 100%);
-    border: 1px solid #ff4444;
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-}
-.result-negative {
-    background: linear-gradient(135deg, #003d1a 0%, #001a0d 100%);
-    border: 1px solid #22c55e;
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-}
-.result-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-}
-.result-detail {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.8rem;
-    color: #c1c7ce;
-    letter-spacing: 0.05em;
-}
-
-/* Divider */
-hr { border-color: #21262d; }
-
-/* Streamlit widget overrides */
-
-#MainMenu {visibility: hidden;}
-header {visibility: hidden;}
-footer {visibility: hidden;}
-div[data-testid="stDecoration"] {visibility: hidden;}
-
-div[data-testid="stNumberInput"] label,
-div[data-testid="stSelectbox"] label,
-div[data-testid="stSlider"] label {
-    font-size: 0.8rem !important;
-    color: #c9d1d9 !important;
-    font-family: 'DM Sans', sans-serif !important;
-}
-
-div[data-testid="stButton"] > button {
-    background: #ff6b6b;
-    color: #0d1117;
-    border: none;
-    border-radius: 8px;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.85rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    padding: 0.65rem 2rem;
-    width: 100%;
-    transition: all 0.2s ease;
-}
-div[data-testid="stButton"] > button:hover {
-    background: #ff4444;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 20px rgba(255,107,107,0.3);
-}
-
-div.stForm {
-    background: #0e1117 !important;
-}
-
+/* ── Disclaimer ────────────────────────────────────────────────── */
 .disclaimer {
-    font-size: 0.7rem;
-    color: #99a0aa;
-    font-family: 'DM Mono', monospace;
-    text-align: center;
-    margin-top: 1.5rem;
-    line-height: 1.6;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin-top: 2.5rem;
+  padding: 1rem;
+  border-top: 1px solid var(--border);
 }
+
+/* ── Animations ────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
