@@ -126,34 +126,39 @@ def render_risk_viz(risk_pct: float, is_high_risk: bool,
                     cp: int, chol: int, trestbps: int,
                     thalach: int, oldpeak: float, ca: int):
     """
-    Returns a plain HTML fragment (no <style> tags) for st.markdown.
-    All CSS classes live in style.css. Dynamic values use inline styles only.
+    SVG donut gauge + organ impact cards.
+    No conic-gradient — uses stroke-dasharray on a <circle> so it works everywhere.
+    All CSS classes live in style.css; only dynamic values are inline.
     """
     # ── Palette ──────────────────────────────────────────────────
     if risk_pct < 30:
-        c1, c2    = "#22c55e", "#16a34a"
-        glow      = "rgba(34,197,94,0.35)"
+        color     = "#22c55e"
+        glow      = "rgba(34,197,94,0.5)"
         label_col = "#86efac"
         tier_txt  = "LOW RISK"
         tier_icon = "🟢"
     elif risk_pct < 60:
-        c1, c2    = "#f59e0b", "#d97706"
-        glow      = "rgba(245,158,11,0.35)"
+        color     = "#f59e0b"
+        glow      = "rgba(245,158,11,0.5)"
         label_col = "#fcd34d"
         tier_txt  = "MODERATE RISK"
         tier_icon = "🟡"
     else:
-        c1, c2    = "#ef4444", "#b91c1c"
-        glow      = "rgba(239,68,68,0.4)"
+        color     = "#ef4444"
+        glow      = "rgba(239,68,68,0.55)"
         label_col = "#fca5a5"
         tier_txt  = "HIGH RISK"
         tier_icon = "🔴"
 
-    # ── Gauge: conic-gradient as inline style ─────────────────────
-    sweep      = risk_pct / 100 * 270
-    conic      = (f"conic-gradient(from 135deg, {c1} 0deg, {c2} {sweep:.1f}deg, "
-                  f"rgba(255,255,255,0.07) {sweep:.1f}deg 270deg, transparent 270deg)")
-    pulse_anim = "animation:pulse-ring 1s ease-out infinite;" if is_high_risk else ""
+    # ── SVG donut maths ───────────────────────────────────────────
+    # viewBox="0 0 120 120", centre=60,60, radius=52, strokeWidth=10
+    r          = 52
+    cx = cy    = 60
+    circumf    = 2 * 3.14159 * r          # ≈ 326.7
+    filled     = circumf * risk_pct / 100
+    gap        = circumf - filled
+    # rotate so arc starts at 12 o'clock (top): -90deg transform
+    pulse_filter = f'filter="url(#glow)"' if is_high_risk else ''
 
     # ── Organ/metric cards ────────────────────────────────────────
     def organ_bar(icon, label, value_pct, note):
@@ -185,27 +190,45 @@ def render_risk_viz(risk_pct: float, is_high_risk: bool,
       + organ_bar("🩸", "Cholesterol",    chol_pct,   f"{chol} mg/dl")
       + organ_bar("💉", "Blood Pressure", bp_pct,     f"{trestbps} mm Hg resting")
       + organ_bar("⚡", "ST Depression",  st_pct,     f"{oldpeak:.1f} — exercise ECG")
-      + organ_bar("💓", "Max Heart Rate", hr_pct,     f"{thalach} bpm  (lower = more concern)")
+      + organ_bar("💓", "Max Heart Rate", hr_pct,     f"{thalach} bpm (lower = more concern)")
       + organ_bar("🔬", "Vessel Load",    vessel_pct, f"{ca} major vessel(s) affected")
     )
 
     return f"""
 <div class="viz-wrapper">
 
-  <div class="gauge-wrap">
-    <div class="gauge-ring" style="background:{conic};{pulse_anim}"></div>
-    <div class="gauge-center">
-      <div class="gauge-pct" style="color:{label_col};filter:drop-shadow(0 0 12px {glow});">
-        {risk_pct:.0f}<span class="gauge-sign">%</span>
-      </div>
-      <div class="gauge-tier" style="color:{label_col};">{tier_icon} {tier_txt}</div>
-    </div>
-  </div>
+  <!-- SVG donut gauge -->
+  <svg class="donut-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="3" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <!-- Track ring -->
+    <circle cx="{cx}" cy="{cy}" r="{r}"
+            fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"/>
+    <!-- Filled arc -->
+    <circle cx="{cx}" cy="{cy}" r="{r}"
+            fill="none"
+            stroke="{color}"
+            stroke-width="10"
+            stroke-linecap="round"
+            stroke-dasharray="{filled:.2f} {gap:.2f}"
+            transform="rotate(-90 {cx} {cy})"
+            style="filter:drop-shadow(0 0 6px {glow});"
+            {pulse_filter}/>
+    <!-- Centre text: percentage -->
+    <text x="{cx}" y="{cy - 8}" text-anchor="middle"
+          font-family="Syne,sans-serif" font-size="20" font-weight="800"
+          fill="{label_col}">{risk_pct:.1f}%</text>
+    <!-- Centre text: tier label -->
+    <text x="{cx}" y="{cy + 10}" text-anchor="middle"
+          font-family="Syne,sans-serif" font-size="7" font-weight="700"
+          letter-spacing="1.5" fill="{label_col}" opacity="0.8">{tier_icon} {tier_txt}</text>
+  </svg>
 
-  <div class="scale-row">
-    <span>0%</span><span>RISK SCORE</span><span>100%</span>
-  </div>
-
+  <!-- Organ impact cards -->
   <div class="cards-grid">
     {cards}
   </div>
@@ -230,17 +253,14 @@ if submitted:
         prediction  = model.predict(features)[0]
         try:
             proba      = model.predict_proba(features)[0]
-            risk_pct   = float(proba[1]) * 100          # probability of class=1
-            conf_text  = f"Model confidence: {proba[int(prediction)]*100:.1f}%"
+            risk_pct   = float(proba[1]) * 100
         except Exception:
             risk_pct   = 75.0 if prediction == 1 else 25.0
-            conf_text  = ""
     else:
         # Demo heuristic
         risk_score = (age > 55) + (chol > 240) + (thalach < 140) + (oldpeak > 1) + (ca > 0)
         prediction = 1 if risk_score >= 3 else 0
         risk_pct   = min(risk_score / 5 * 100, 95)
-        conf_text  = "Demo mode · install model.pkl for real predictions"
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -251,28 +271,6 @@ if submitted:
         thalach=thalach, oldpeak=oldpeak, ca=ca
     )
     st.markdown(viz_html, unsafe_allow_html=True)
-
-    # ── Text result card ──
-    if prediction == 1:
-        st.markdown(f"""
-        <div class="result-positive">
-            <div class="result-title">⚠️ High Risk Detected</div>
-            <p style="color:#ff9999;font-family:'DM Sans',sans-serif;margin:0.5rem 0;">
-                The model predicts a <strong>positive indicator</strong> for heart disease.
-            </p>
-            <div class="result-detail">{conf_text}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown(f"""
-        <div class="result-negative">
-            <div class="result-title">✅ Low Risk</div>
-            <p style="color:#86efac;font-family:'DM Sans',sans-serif;margin:0.5rem 0;">
-                The model predicts <strong>no significant indicator</strong> of heart disease.
-            </p>
-            <div class="result-detail">{conf_text}</div>
-        </div>
-        """, unsafe_allow_html=True)
 
     with st.expander("View input summary"):
         labels = ["Age","Sex","Chest Pain Type","Resting BP","Cholesterol",
