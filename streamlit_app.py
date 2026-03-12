@@ -122,229 +122,281 @@ with st.form("prediction_form"):
     submitted = st.form_submit_button("RUN PREDICTION →")
 
 # ── Human Body Risk Visualizer ────────────────────────────────────────────────
-def render_human_risk(risk_pct: float, is_high_risk: bool):
+def render_risk_viz(risk_pct: float, is_high_risk: bool,
+                    cp: int, chol: int, trestbps: int,
+                    thalach: int, oldpeak: float, ca: int):
     """
-    Renders via components.html() (iframe) so SVG defs/clipPath are never sanitized.
+    Radial gauge + organ impact cards. Pure CSS/HTML — no SVG paths.
+    Uses a conic-gradient dial and animated bar cards per organ/metric.
     """
+    # ── Palette ──────────────────────────────────────────────────
     if risk_pct < 30:
-        fill_top, fill_bot = "#22c55e", "#16a34a"
-        glow   = "rgba(34,197,94,0.4)"
-        label_color = "#86efac"
-        risk_label  = "LOW RISK"
+        c1, c2      = "#22c55e", "#16a34a"
+        glow        = "rgba(34,197,94,0.35)"
+        label_col   = "#86efac"
+        tier_txt    = "LOW RISK"
+        tier_icon   = "🟢"
     elif risk_pct < 60:
-        fill_top, fill_bot = "#f59e0b", "#d97706"
-        glow   = "rgba(245,158,11,0.4)"
-        label_color = "#fcd34d"
-        risk_label  = "MODERATE RISK"
+        c1, c2      = "#f59e0b", "#d97706"
+        glow        = "rgba(245,158,11,0.35)"
+        label_col   = "#fcd34d"
+        tier_txt    = "MODERATE RISK"
+        tier_icon   = "🟡"
     else:
-        fill_top, fill_bot = "#ef4444", "#b91c1c"
-        glow   = "rgba(239,68,68,0.45)"
-        label_color = "#fca5a5"
-        risk_label  = "HIGH RISK"
+        c1, c2      = "#ef4444", "#b91c1c"
+        glow        = "rgba(239,68,68,0.4)"
+        label_col   = "#fca5a5"
+        tier_txt    = "HIGH RISK"
+        tier_icon   = "🔴"
 
-    H = 220.0
-    fill_y = H * (1 - risk_pct / 100)
-    fill_h = H * (risk_pct / 100)
-    fill_y_start = min(fill_y + 30, H)
-    fill_h_start = max(fill_h - 30, 0)
-
-    pulse_dur = "0.75s" if is_high_risk else "1.5s"
-
-    # Single compound path for the entire human silhouette (used in clipPath)
-    # Drawn in one <path> so clipPath works reliably across all browsers
-    BODY_PATH = (
-        # Head
-        "M50,4 C43,4 38,10 38,18 C38,26 43,32 50,32 C57,32 62,26 62,18 C62,10 57,4 50,4Z "
-        # Neck
-        "M45,32 L45,40 L55,40 L55,32Z "
-        # Torso + shoulders
-        "M28,40 C22,44 18,56 20,72 L22,84 L78,84 L80,72 C82,56 78,44 72,40 "
-        "C66,37 58,35 50,35 C42,35 34,37 28,40Z "
-        # Left upper arm
-        "M20,44 C12,50 8,66 10,80 C11,86 14,89 18,87 C20,86 22,83 22,78 "
-        "L24,60 C25,52 24,47 20,44Z "
-        # Right upper arm
-        "M80,44 C88,50 92,66 90,80 C89,86 86,89 82,87 C80,86 78,83 78,78 "
-        "L76,60 C75,52 76,47 80,44Z "
-        # Left forearm + hand
-        "M10,80 C8,94 8,108 10,120 C11,126 14,128 17,126 C19,124 20,120 19,114 "
-        "L18,92 C16,86 13,82 10,80Z "
-        "M7,122 C5,126 6,132 10,133 C14,134 17,130 16,126Z "
-        # Right forearm + hand
-        "M90,80 C92,94 92,108 90,120 C89,126 86,128 83,126 C81,124 80,120 81,114 "
-        "L82,92 C84,86 87,82 90,80Z "
-        "M93,122 C95,126 94,132 90,133 C86,134 83,130 84,126Z "
-        # Hips
-        "M22,84 C20,94 24,100 30,102 L70,102 C76,100 80,94 78,84Z "
-        # Left thigh
-        "M30,102 C26,116 26,134 28,150 C29,157 34,158 38,156 C42,154 43,149 42,142 "
-        "L40,118 C38,108 35,103 30,102Z "
-        # Right thigh
-        "M70,102 C74,116 74,134 72,150 C71,157 66,158 62,156 C58,154 57,149 58,142 "
-        "L60,118 C62,108 65,103 70,102Z "
-        # Left shin + foot
-        "M28,150 C26,166 26,182 28,196 C29,202 33,204 37,202 C41,200 42,195 41,188 "
-        "L40,162 C39,155 35,151 28,150Z "
-        "M22,200 C20,204 24,208 30,207 C36,206 39,202 37,199Z "
-        # Right shin + foot
-        "M72,150 C74,166 74,182 72,196 C71,202 67,204 63,202 C59,200 58,195 59,188 "
-        "L60,162 C61,155 65,151 72,150Z "
-        "M78,200 C80,204 76,208 70,207 C64,206 61,202 63,199Z"
+    # ── Gauge conic-gradient ──────────────────────────────────────
+    # Dial sweeps 270° (from 135° to 405°). Map risk_pct → degrees.
+    sweep_deg  = risk_pct / 100 * 270          # 0–270
+    filled_end = 135 + sweep_deg               # start angle + sweep
+    # conic-gradient: filled arc, then gap, then track
+    conic = (
+        f"conic-gradient("
+        f"from 135deg, "
+        f"{c1} 0deg, {c2} {sweep_deg:.1f}deg, "
+        f"rgba(255,255,255,0.07) {sweep_deg:.1f}deg 270deg, "
+        f"transparent 270deg"
+        f")"
     )
 
-    pulse_svg = ""
-    if is_high_risk:
-        pulse_svg = f"""
-        <circle cx="50" cy="62" r="5" fill="{fill_top}" opacity="0.8">
-          <animate attributeName="r" values="3;10;3" dur="{pulse_dur}" repeatCount="indefinite"/>
-          <animate attributeName="opacity" values="0.8;0;0.8" dur="{pulse_dur}" repeatCount="indefinite"/>
-        </circle>
-        <circle cx="50" cy="62" r="3" fill="white" opacity="0.95">
-          <animate attributeName="opacity" values="1;0.2;1" dur="{pulse_dur}" repeatCount="indefinite"/>
-        </circle>"""
+    # ── Organ/metric cards ────────────────────────────────────────
+    def organ_bar(icon, label, value_pct, note):
+        if value_pct < 33:
+            bar_c = "#22c55e"
+            status = "Normal"
+        elif value_pct < 66:
+            bar_c = "#f59e0b"
+            status = "Elevated"
+        else:
+            bar_c = "#ef4444"
+            status = "High"
+        return f"""
+        <div class="organ-card">
+          <div class="organ-top">
+            <span class="organ-icon">{icon}</span>
+            <span class="organ-label">{label}</span>
+            <span class="organ-status" style="color:{bar_c};">{status}</span>
+          </div>
+          <div class="organ-track">
+            <div class="organ-fill" style="width:{value_pct:.0f}%;background:{bar_c};
+              box-shadow:0 0 8px {bar_c}88;"></div>
+          </div>
+          <div class="organ-note">{note}</div>
+        </div>"""
+
+    # Normalise each metric to 0–100 for the bar
+    cp_pct       = cp / 3 * 100                                # 0=typical angina worst, 3=asymptomatic best → invert
+    cp_pct       = (3 - cp) / 3 * 100                         # higher cp value = lower concern
+    chol_pct     = max(0, min(100, (chol - 150) / (400 - 150) * 100))
+    bp_pct       = max(0, min(100, (trestbps - 90) / (180 - 90) * 100))
+    hr_pct       = max(0, min(100, (200 - thalach) / (200 - 60) * 100))
+    st_pct       = max(0, min(100, oldpeak / 6.0 * 100))
+    vessel_pct   = ca / 3 * 100
+
+    cards_html = (
+        organ_bar("🫀", "Heart Stress",   risk_pct,   f"Overall model risk score")
+      + organ_bar("🩸", "Cholesterol",    chol_pct,   f"{chol} mg/dl")
+      + organ_bar("💉", "Blood Pressure", bp_pct,     f"{trestbps} mm Hg resting")
+      + organ_bar("⚡", "ST Depression",  st_pct,     f"{oldpeak:.1f} — exercise ECG")
+      + organ_bar("💓", "Max Heart Rate", hr_pct,     f"{thalach} bpm (lower = more concern)")
+      + organ_bar("🔬", "Vessel Load",    vessel_pct, f"{ca} major vessel(s) affected")
+    )
+
+    pulse_anim = """
+      @keyframes pulse-ring {
+        0%   { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
+        70%  { transform: scale(1);    box-shadow: 0 0 0 14px rgba(239,68,68,0); }
+        100% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+      }
+    """ if is_high_risk else ""
+
+    pulse_style = "animation: pulse-ring 1s ease-out infinite;" if is_high_risk else ""
 
     html = f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap');
-  * {{ margin:0; padding:0; box-sizing:border-box; }}
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
+  *, *::before, *::after {{ margin:0; padding:0; box-sizing:border-box; }}
+
   body {{
-    background: #111520;
+    background: #0e1118;
+    color: #f1f5f9;
+    font-family: 'DM Sans', sans-serif;
+    padding: 24px 20px 28px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 28px 20px 24px;
-    font-family: 'DM Sans', sans-serif;
-    gap: 10px;
+    gap: 20px;
   }}
-  .risk-label {{
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: {label_color};
+
+  /* ── Gauge ── */
+  .gauge-wrap {{
+    position: relative;
+    width: 200px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }}
-  .risk-percent {{
+  .gauge-ring {{
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    {conic}
+    {pulse_style}
+  }}
+  /* Mask the centre to make a donut */
+  .gauge-ring::after {{
+    content: '';
+    position: absolute;
+    inset: 22px;
+    border-radius: 50%;
+    background: #0e1118;
+  }}
+  .gauge-center {{
+    position: relative;
+    z-index: 2;
+    text-align: center;
+  }}
+  .gauge-pct {{
     font-family: 'Syne', sans-serif;
-    font-size: 58px;
+    font-size: 44px;
     font-weight: 800;
     letter-spacing: -0.04em;
     line-height: 1;
-    color: {label_color};
+    color: {label_col};
+    filter: drop-shadow(0 0 12px {glow});
   }}
-  .pct-sign {{
-    font-size: 28px;
-    font-weight: 600;
+  .gauge-sign {{
+    font-size: 20px;
     vertical-align: super;
-    margin-left: 2px;
+    margin-left: 1px;
   }}
-  .body-wrap {{
-    filter: drop-shadow(0 0 20px {glow});
+  .gauge-tier {{
+    font-family: 'Syne', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: {label_col};
+    margin-top: 2px;
+    opacity: 0.85;
   }}
-  .meter-wrap {{
-    width: 240px;
-    margin-top: 6px;
+
+  /* Tick marks on gauge */
+  .gauge-ticks {{
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
   }}
-  .meter-track {{
+
+  /* ── Organ cards ── */
+  .cards-grid {{
     width: 100%;
-    height: 6px;
+    max-width: 440px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }}
+  .organ-card {{
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 10px 14px;
+    animation: fadeUp 0.5s ease both;
+  }}
+  .organ-card:nth-child(1) {{ animation-delay: 0.05s; }}
+  .organ-card:nth-child(2) {{ animation-delay: 0.10s; }}
+  .organ-card:nth-child(3) {{ animation-delay: 0.15s; }}
+  .organ-card:nth-child(4) {{ animation-delay: 0.20s; }}
+  .organ-card:nth-child(5) {{ animation-delay: 0.25s; }}
+  .organ-card:nth-child(6) {{ animation-delay: 0.30s; }}
+
+  .organ-top {{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 7px;
+  }}
+  .organ-icon  {{ font-size: 15px; }}
+  .organ-label {{
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: #cbd5e1;
+    flex: 1;
+  }}
+  .organ-status {{
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }}
+  .organ-track {{
+    height: 4px;
     background: rgba(255,255,255,0.07);
     border-radius: 99px;
     overflow: hidden;
   }}
-  .meter-fill {{
+  .organ-fill {{
     height: 100%;
-    width: {risk_pct}%;
-    background: linear-gradient(90deg, {fill_bot}, {fill_top});
     border-radius: 99px;
-    animation: barGrow 1.3s cubic-bezier(.25,.1,.25,1) both;
+    animation: barGrow 1.1s cubic-bezier(.25,.1,.25,1) both;
   }}
+  .organ-note {{
+    font-size: 10px;
+    color: #475569;
+    margin-top: 5px;
+    letter-spacing: 0.02em;
+  }}
+
   @keyframes barGrow {{
-    from {{ width: 0%; }}
-    to   {{ width: {risk_pct}%; }}
+    from {{ width: 0 !important; }}
   }}
-  .meter-labels {{
+  @keyframes fadeUp {{
+    from {{ opacity:0; transform:translateY(8px); }}
+    to   {{ opacity:1; transform:translateY(0); }}
+  }}
+  {pulse_anim}
+
+  /* ── Scale labels ── */
+  .scale-row {{
     display: flex;
     justify-content: space-between;
-    margin-top: 5px;
-    font-size: 10px;
-    color: #64748b;
-    letter-spacing: 0.05em;
+    width: 200px;
+    margin-top: -12px;
+  }}
+  .scale-row span {{
+    font-size: 9px;
+    color: #475569;
+    letter-spacing: 0.06em;
   }}
 </style>
 </head>
 <body>
-  <div class="risk-label">{risk_label}</div>
-  <div class="risk-percent">{risk_pct:.1f}<span class="pct-sign">%</span></div>
 
-  <div class="body-wrap">
-    <svg viewBox="0 0 100 220" width="170" height="374"
-         xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="{fill_top}" stop-opacity="1"/>
-          <stop offset="100%" stop-color="{fill_bot}" stop-opacity="0.9"/>
-        </linearGradient>
-
-        <clipPath id="bodyClip">
-          <path d="{BODY_PATH}"/>
-        </clipPath>
-
-        <linearGradient id="shimmerGrad" x1="0" y1="0" x2="1" y2="0"
-                        gradientUnits="userSpaceOnUse">
-          <stop offset="0%"   stop-color="white" stop-opacity="0"/>
-          <stop offset="50%"  stop-color="white" stop-opacity="0.12"/>
-          <stop offset="100%" stop-color="white" stop-opacity="0"/>
-          <animateTransform attributeName="gradientTransform" type="translate"
-            values="-100 0; 200 0" dur="2.5s" repeatCount="indefinite"/>
-        </linearGradient>
-      </defs>
-
-      <!-- Ghost body (dim outline bg) -->
-      <g clip-path="url(#bodyClip)">
-        <rect x="0" y="0" width="100" height="220" fill="rgba(255,255,255,0.055)"/>
-      </g>
-
-      <!-- Animated fill rising from bottom -->
-      <g clip-path="url(#bodyClip)">
-        <rect x="0" y="{fill_y:.2f}" width="100" height="{fill_h:.2f}"
-              fill="url(#fillGrad)">
-          <animate attributeName="y"
-            from="{fill_y_start:.2f}" to="{fill_y:.2f}"
-            dur="1.3s" fill="freeze"
-            calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
-          <animate attributeName="height"
-            from="{fill_h_start:.2f}" to="{fill_h:.2f}"
-            dur="1.3s" fill="freeze"
-            calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
-        </rect>
-        <!-- Shimmer sweep -->
-        <rect x="0" y="{fill_y:.2f}" width="100" height="{fill_h:.2f}"
-              fill="url(#shimmerGrad)"/>
-      </g>
-
-      <!-- Outline stroke on top -->
-      <path d="{BODY_PATH}"
-            fill="none"
-            stroke="rgba(255,255,255,0.2)"
-            stroke-width="0.7"
-            stroke-linejoin="round"/>
-
-      <!-- Heart pulse dot (high risk only) -->
-      {pulse_svg}
-    </svg>
+  <!-- Radial gauge -->
+  <div class="gauge-wrap">
+    <div class="gauge-ring"></div>
+    <div class="gauge-center">
+      <div class="gauge-pct">{risk_pct:.0f}<span class="gauge-sign">%</span></div>
+      <div class="gauge-tier">{tier_icon} {tier_txt}</div>
+    </div>
+  </div>
+  <div class="scale-row">
+    <span>0%</span><span>RISK SCORE</span><span>100%</span>
   </div>
 
-  <div class="meter-wrap">
-    <div class="meter-track">
-      <div class="meter-fill"></div>
-    </div>
-    <div class="meter-labels">
-      <span>0%</span><span>50%</span><span>100%</span>
-    </div>
+  <!-- Organ impact grid -->
+  <div class="cards-grid">
+    {cards_html}
   </div>
 
 </body>
