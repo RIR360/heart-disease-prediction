@@ -6,6 +6,7 @@ import pickle
 import os
 import base64
 from report import generate_report
+from datetime import datetime
 
 # ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
