@@ -1,4 +1,4 @@
-import time
+from datetime import datetime
 import streamlit as st
 import streamlit.components.v1 as components
 import numpy as np
@@ -6,7 +6,6 @@ import pickle
 import os
 import base64
 from report import generate_report
-from datetime import datetime
 
 # ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -42,7 +41,36 @@ if os.path.exists(video_file):
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown('<div class="main-title">Heart Disease Risk Predictor</div>', unsafe_allow_html=True)
-st.markdown('<div class="main-subtitle">Random Forest <br/> Clinical Feature Analysis <br/> Contributors: <br/> Foysal · Ashraf · Tasnimul</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-subtitle">Random Forest · Clinical Feature Analysis</div>', unsafe_allow_html=True)
+
+# ── Contributors ──────────────────────────────────────────────────────────────
+def contributor_card(name, role, img_file):
+    if os.path.exists(img_file):
+        with open(img_file, "rb") as f:
+            img_b64 = base64.b64encode(f.read()).decode()
+        ext = img_file.rsplit(".", 1)[-1].lower()
+        mime = "image/jpeg" if ext in ("jpg", "jpeg") else "image/png"
+        img_tag = f'<img src="data:{mime};base64,{img_b64}" class="contrib-photo"/>'
+    else:
+        # Fallback: initials circle if file not found yet
+        initials = "".join(w[0] for w in name.split())
+        img_tag = f'<div class="contrib-initials">{initials}</div>'
+
+    return f"""
+    <div class="contrib-card">
+      {img_tag}
+      <div class="contrib-name">{name}</div>
+      <div class="contrib-role">{role}</div>
+    </div>"""
+
+contributors = [
+    ("Foysal",   "CSE 8th", "foysal.png"),
+    ("Ashraf",   "CSE 8th",    "ashraf.png"),
+    ("Tasnimul", "CSE 8th",   "tasnimul.png"),
+]
+
+cards_html = "".join(contributor_card(n, r, f) for n, r, f in contributors)
+st.markdown(f'<div class="contrib-row">{cards_html}</div>', unsafe_allow_html=True)
 
 # ── Load model ────────────────────────────────────────────────────────────────
 @st.cache_resource
@@ -288,6 +316,7 @@ if submitted:
 </div>
 """, unsafe_allow_html=True)
 
+    import time
     time.sleep(1.2)
     loading.empty()
     viz_html = render_risk_viz(
