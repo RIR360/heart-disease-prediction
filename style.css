@@ -103,6 +103,211 @@ html, body, [class*="css"] {
   font-size: 0.82rem !important;
 }
 
+/* Submit button */
+[data-testid="stFormSubmitButton"] button {
+  width: 100% !important;
+  background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+  color: white !important;
+  font-family: var(--font-display) !important;
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 0.85rem 2rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  text-transform: uppercase !important;
+}
+
+[data-testid="stFormSubmitButton"] button:hover {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HUMAN BODY RISK VISUALIZER
+   ═══════════════════════════════════════════════════════════════ */
+
+.risk-viz-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2.5rem 1.5rem 2rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  margin: 1rem 0 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle grid bg inside card */
+.risk-viz-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+}
+
+/* Risk label */
+.risk-label {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  position: relative;
+  z-index: 1;
+}
+
+/* Percentage number */
+.risk-percent {
+  font-family: var(--font-display);
+  font-size: 3.8rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.pct-sign {
+  font-size: 1.8rem;
+  font-weight: 600;
+  vertical-align: super;
+  margin-left: 2px;
+}
+
+/* SVG container */
+.svg-body-container {
+  position: relative;
+  z-index: 1;
+  transition: filter 0.4s ease;
+}
+
+.body-svg {
+  width: 160px;
+  height: auto;
+  display: block;
+}
+
+/* ── Risk meter bar ─────────────────────────────────────────────── */
+.risk-meter-bar {
+  width: 100%;
+  max-width: 280px;
+  position: relative;
+  z-index: 1;
+  margin-top: 0.5rem;
+}
+
+.risk-meter-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.risk-meter-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 1.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+  position: relative;
+}
+
+/* Animated shimmer on fill bar */
+.risk-meter-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: barShimmer 2s infinite;
+}
+
+@keyframes barShimmer {
+  from { left: -100%; }
+  to   { left: 100%;  }
+}
+
+.risk-meter-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESULT CARDS
+   ═══════════════════════════════════════════════════════════════ */
+
+.result-positive {
+  background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(185,28,28,0.08));
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 14px;
+  padding: 1.5rem;
+  text-align: center;
+  animation: fadeUp 0.4s ease both;
+}
+
+.result-negative {
+  background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(22,163,74,0.07));
+  border: 1px solid rgba(34,197,94,0.25);
+  border-radius: 14px;
+  padding: 1.5rem;
+  text-align: center;
+  animation: fadeUp 0.4s ease both;
+}
+
+.result-title {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
+}
+
+.result-detail {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-top: 0.6rem;
+  letter-spacing: 0.02em;
+}
+
+/* ── Expander ──────────────────────────────────────────────────── */
+[data-testid="stExpander"] {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+}
+
+[data-testid="stExpander"] summary {
+  font-family: var(--font-body) !important;
+  font-size: 0.82rem !important;
+  color: var(--text-muted) !important;
+}
+
+/* ── Warning / info boxes ──────────────────────────────────────── */
+[data-testid="stAlert"] {
+  background: var(--bg-card-alt) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  font-family: var(--font-body) !important;
+  font-size: 0.82rem !important;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    RISK VISUALIZER — gauge + organ cards
    ═══════════════════════════════════════════════════════════════ */
@@ -119,76 +324,11 @@ html, body, [class*="css"] {
   margin: 1rem 0 1.5rem;
 }
 
-/* ── Donut gauge ── */
-.gauge-wrap {
-  position: relative;
+/* ── SVG donut gauge ── */
+.donut-svg {
   width: 200px;
   height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.gauge-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  /* background set via inline style (conic-gradient) */
-}
-
-/* Hollow centre */
-.gauge-ring::after {
-  content: '';
-  position: absolute;
-  inset: 24px;
-  border-radius: 50%;
-  background: var(--bg-card);
-}
-
-.gauge-center {
-  position: relative;
-  z-index: 2;
-  text-align: center;
-}
-
-.gauge-pct {
-  font-family: var(--font-display);
-  font-size: 2.6rem;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 1;
-  /* color + filter set via inline style */
-}
-
-.gauge-sign {
-  font-size: 1.1rem;
-  vertical-align: super;
-  margin-left: 1px;
-}
-
-.gauge-tier {
-  font-family: var(--font-display);
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  margin-top: 4px;
-  opacity: 0.85;
-  /* color set via inline style */
-}
-
-/* Scale labels below gauge */
-.scale-row {
-  display: flex;
-  justify-content: space-between;
-  width: 200px;
-  margin-top: -8px;
-}
-.scale-row span {
-  font-family: var(--font-body);
-  font-size: 0.6rem;
-  color: var(--text-muted);
-  letter-spacing: 0.06em;
+  display: block;
 }
 
 /* ── Organ cards ── */
@@ -269,43 +409,6 @@ html, body, [class*="css"] {
   100% { transform: scale(0.93); box-shadow: 0 0 0 0   rgba(239,68,68,0);   }
 }
 
-
-/* Card */
-.card {
-    background: #161b22;
-    border: 1px solid #21262d;
-    border-radius: 10px;
-    padding: 1.5rem 2rem;
-    margin-bottom: 1.5rem;
-}
-
-/* Result boxes */
-.result-positive {
-    background: linear-gradient(135deg, #3d0000 0%, #1a0000 100%);
-    border: 1px solid #ff4444;
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-}
-.result-negative {
-    background: linear-gradient(135deg, #003d1a 0%, #001a0d 100%);
-    border: 1px solid #22c55e;
-    border-radius: 12px;
-    padding: 2rem;
-    text-align: center;
-}
-.result-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-}
-.result-detail {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.8rem;
-    color: #c1c7ce;
-    letter-spacing: 0.05em;
-}
-
 /* Divider */
 hr { border-color: #21262d; }
 
@@ -355,3 +458,14 @@ div.stForm {
     margin-top: 1.5rem;
     line-height: 1.6;
 }
+
+/* ── Animations ────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
