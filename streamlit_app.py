@@ -264,7 +264,30 @@ if submitted:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # ── Risk visualizer ──
+    # ── Loading animation ──
+    loading = st.empty()
+    loading.markdown("""
+<div class="loading-wrap">
+  <div class="loading-ring">
+    <div class="loading-pulse"></div>
+    <svg class="loading-spinner" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="60" cy="60" r="52" fill="none"
+              stroke="rgba(255,255,255,0.06)" stroke-width="10"/>
+      <circle cx="60" cy="60" r="52" fill="none"
+              stroke="#ef4444" stroke-width="10"
+              stroke-linecap="round"
+              stroke-dasharray="80 246"
+              transform="rotate(-90 60 60)"
+              class="loading-arc"/>
+    </svg>
+  </div>
+  <div class="loading-text">Analysing clinical data<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span></div>
+</div>
+""", unsafe_allow_html=True)
+
+    import time
+    time.sleep(1.2)
+    loading.empty()
     viz_html = render_risk_viz(
         risk_pct, is_high_risk=(prediction == 1),
         cp=cp, chol=chol, trestbps=trestbps,
