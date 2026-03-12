@@ -126,283 +126,91 @@ def render_risk_viz(risk_pct: float, is_high_risk: bool,
                     cp: int, chol: int, trestbps: int,
                     thalach: int, oldpeak: float, ca: int):
     """
-    Radial gauge + organ impact cards. Pure CSS/HTML — no SVG paths.
-    Uses a conic-gradient dial and animated bar cards per organ/metric.
+    Returns a plain HTML fragment (no <style> tags) for st.markdown.
+    All CSS classes live in style.css. Dynamic values use inline styles only.
     """
     # ── Palette ──────────────────────────────────────────────────
     if risk_pct < 30:
-        c1, c2      = "#22c55e", "#16a34a"
-        glow        = "rgba(34,197,94,0.35)"
-        label_col   = "#86efac"
-        tier_txt    = "LOW RISK"
-        tier_icon   = "🟢"
+        c1, c2    = "#22c55e", "#16a34a"
+        glow      = "rgba(34,197,94,0.35)"
+        label_col = "#86efac"
+        tier_txt  = "LOW RISK"
+        tier_icon = "🟢"
     elif risk_pct < 60:
-        c1, c2      = "#f59e0b", "#d97706"
-        glow        = "rgba(245,158,11,0.35)"
-        label_col   = "#fcd34d"
-        tier_txt    = "MODERATE RISK"
-        tier_icon   = "🟡"
+        c1, c2    = "#f59e0b", "#d97706"
+        glow      = "rgba(245,158,11,0.35)"
+        label_col = "#fcd34d"
+        tier_txt  = "MODERATE RISK"
+        tier_icon = "🟡"
     else:
-        c1, c2      = "#ef4444", "#b91c1c"
-        glow        = "rgba(239,68,68,0.4)"
-        label_col   = "#fca5a5"
-        tier_txt    = "HIGH RISK"
-        tier_icon   = "🔴"
+        c1, c2    = "#ef4444", "#b91c1c"
+        glow      = "rgba(239,68,68,0.4)"
+        label_col = "#fca5a5"
+        tier_txt  = "HIGH RISK"
+        tier_icon = "🔴"
 
-    # ── Gauge conic-gradient ──────────────────────────────────────
-    # Dial sweeps 270° (from 135° to 405°). Map risk_pct → degrees.
-    sweep_deg  = risk_pct / 100 * 270          # 0–270
-    filled_end = 135 + sweep_deg               # start angle + sweep
-    # conic-gradient: filled arc, then gap, then track
-    conic = (
-        f"conic-gradient("
-        f"from 135deg, "
-        f"{c1} 0deg, {c2} {sweep_deg:.1f}deg, "
-        f"rgba(255,255,255,0.07) {sweep_deg:.1f}deg 270deg, "
-        f"transparent 270deg"
-        f")"
-    )
+    # ── Gauge: conic-gradient as inline style ─────────────────────
+    sweep      = risk_pct / 100 * 270
+    conic      = (f"conic-gradient(from 135deg, {c1} 0deg, {c2} {sweep:.1f}deg, "
+                  f"rgba(255,255,255,0.07) {sweep:.1f}deg 270deg, transparent 270deg)")
+    pulse_anim = "animation:pulse-ring 1s ease-out infinite;" if is_high_risk else ""
 
     # ── Organ/metric cards ────────────────────────────────────────
     def organ_bar(icon, label, value_pct, note):
-        if value_pct < 33:
-            bar_c = "#22c55e"
-            status = "Normal"
-        elif value_pct < 66:
-            bar_c = "#f59e0b"
-            status = "Elevated"
-        else:
-            bar_c = "#ef4444"
-            status = "High"
-        return f"""
-        <div class="organ-card">
-          <div class="organ-top">
-            <span class="organ-icon">{icon}</span>
-            <span class="organ-label">{label}</span>
-            <span class="organ-status" style="color:{bar_c};">{status}</span>
-          </div>
-          <div class="organ-track">
-            <div class="organ-fill" style="width:{value_pct:.0f}%;background:{bar_c};
-              box-shadow:0 0 8px {bar_c}88;"></div>
-          </div>
-          <div class="organ-note">{note}</div>
-        </div>"""
+        bar_c  = "#22c55e" if value_pct < 33 else ("#f59e0b" if value_pct < 66 else "#ef4444")
+        status = "Normal"  if value_pct < 33 else ("Elevated" if value_pct < 66 else "High")
+        return (
+            f'<div class="organ-card">'
+            f'<div class="organ-top">'
+            f'<span class="organ-icon">{icon}</span>'
+            f'<span class="organ-label">{label}</span>'
+            f'<span class="organ-status" style="color:{bar_c};">{status}</span>'
+            f'</div>'
+            f'<div class="organ-track">'
+            f'<div class="organ-fill" style="width:{value_pct:.0f}%;background:{bar_c};'
+            f'box-shadow:0 0 8px {bar_c}88;"></div>'
+            f'</div>'
+            f'<div class="organ-note">{note}</div>'
+            f'</div>'
+        )
 
-    # Normalise each metric to 0–100 for the bar
-    cp_pct       = cp / 3 * 100                                # 0=typical angina worst, 3=asymptomatic best → invert
-    cp_pct       = (3 - cp) / 3 * 100                         # higher cp value = lower concern
-    chol_pct     = max(0, min(100, (chol - 150) / (400 - 150) * 100))
-    bp_pct       = max(0, min(100, (trestbps - 90) / (180 - 90) * 100))
-    hr_pct       = max(0, min(100, (200 - thalach) / (200 - 60) * 100))
-    st_pct       = max(0, min(100, oldpeak / 6.0 * 100))
-    vessel_pct   = ca / 3 * 100
+    chol_pct   = max(0, min(100, (chol - 150)    / 250 * 100))
+    bp_pct     = max(0, min(100, (trestbps - 90) / 90  * 100))
+    hr_pct     = max(0, min(100, (200 - thalach) / 140 * 100))
+    st_pct     = max(0, min(100,  oldpeak        / 6.0 * 100))
+    vessel_pct = ca / 3 * 100
 
-    cards_html = (
-        organ_bar("🫀", "Heart Stress",   risk_pct,   f"Overall model risk score")
+    cards = (
+        organ_bar("🫀", "Heart Stress",   risk_pct,   "Overall model risk score")
       + organ_bar("🩸", "Cholesterol",    chol_pct,   f"{chol} mg/dl")
       + organ_bar("💉", "Blood Pressure", bp_pct,     f"{trestbps} mm Hg resting")
       + organ_bar("⚡", "ST Depression",  st_pct,     f"{oldpeak:.1f} — exercise ECG")
-      + organ_bar("💓", "Max Heart Rate", hr_pct,     f"{thalach} bpm (lower = more concern)")
+      + organ_bar("💓", "Max Heart Rate", hr_pct,     f"{thalach} bpm  (lower = more concern)")
       + organ_bar("🔬", "Vessel Load",    vessel_pct, f"{ca} major vessel(s) affected")
     )
 
-    pulse_anim = """
-      @keyframes pulse-ring {
-        0%   { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
-        70%  { transform: scale(1);    box-shadow: 0 0 0 14px rgba(239,68,68,0); }
-        100% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(239,68,68,0); }
-      }
-    """ if is_high_risk else ""
+    return f"""
+<div class="viz-wrapper">
 
-    pulse_style = "animation: pulse-ring 1s ease-out infinite;" if is_high_risk else ""
-
-    html = f"""<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
-  *, *::before, *::after {{ margin:0; padding:0; box-sizing:border-box; }}
-
-  body {{
-    background: #0e1118;
-    color: #f1f5f9;
-    font-family: 'DM Sans', sans-serif;
-    padding: 24px 20px 28px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-  }}
-
-  /* ── Gauge ── */
-  .gauge-wrap {{
-    position: relative;
-    width: 200px;
-    height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }}
-  .gauge-ring {{
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    {conic}
-    {pulse_style}
-  }}
-  /* Mask the centre to make a donut */
-  .gauge-ring::after {{
-    content: '';
-    position: absolute;
-    inset: 22px;
-    border-radius: 50%;
-    background: #0e1118;
-  }}
-  .gauge-center {{
-    position: relative;
-    z-index: 2;
-    text-align: center;
-  }}
-  .gauge-pct {{
-    font-family: 'Syne', sans-serif;
-    font-size: 44px;
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    line-height: 1;
-    color: {label_col};
-    filter: drop-shadow(0 0 12px {glow});
-  }}
-  .gauge-sign {{
-    font-size: 20px;
-    vertical-align: super;
-    margin-left: 1px;
-  }}
-  .gauge-tier {{
-    font-family: 'Syne', sans-serif;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: {label_col};
-    margin-top: 2px;
-    opacity: 0.85;
-  }}
-
-  /* Tick marks on gauge */
-  .gauge-ticks {{
-    position: absolute;
-    inset: -8px;
-    border-radius: 50%;
-  }}
-
-  /* ── Organ cards ── */
-  .cards-grid {{
-    width: 100%;
-    max-width: 440px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }}
-  .organ-card {{
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 10px;
-    padding: 10px 14px;
-    animation: fadeUp 0.5s ease both;
-  }}
-  .organ-card:nth-child(1) {{ animation-delay: 0.05s; }}
-  .organ-card:nth-child(2) {{ animation-delay: 0.10s; }}
-  .organ-card:nth-child(3) {{ animation-delay: 0.15s; }}
-  .organ-card:nth-child(4) {{ animation-delay: 0.20s; }}
-  .organ-card:nth-child(5) {{ animation-delay: 0.25s; }}
-  .organ-card:nth-child(6) {{ animation-delay: 0.30s; }}
-
-  .organ-top {{
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 7px;
-  }}
-  .organ-icon  {{ font-size: 15px; }}
-  .organ-label {{
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-    color: #cbd5e1;
-    flex: 1;
-  }}
-  .organ-status {{
-    font-family: 'Syne', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }}
-  .organ-track {{
-    height: 4px;
-    background: rgba(255,255,255,0.07);
-    border-radius: 99px;
-    overflow: hidden;
-  }}
-  .organ-fill {{
-    height: 100%;
-    border-radius: 99px;
-    animation: barGrow 1.1s cubic-bezier(.25,.1,.25,1) both;
-  }}
-  .organ-note {{
-    font-size: 10px;
-    color: #475569;
-    margin-top: 5px;
-    letter-spacing: 0.02em;
-  }}
-
-  @keyframes barGrow {{
-    from {{ width: 0 !important; }}
-  }}
-  @keyframes fadeUp {{
-    from {{ opacity:0; transform:translateY(8px); }}
-    to   {{ opacity:1; transform:translateY(0); }}
-  }}
-  {pulse_anim}
-
-  /* ── Scale labels ── */
-  .scale-row {{
-    display: flex;
-    justify-content: space-between;
-    width: 200px;
-    margin-top: -12px;
-  }}
-  .scale-row span {{
-    font-size: 9px;
-    color: #475569;
-    letter-spacing: 0.06em;
-  }}
-</style>
-</head>
-<body>
-
-  <!-- Radial gauge -->
   <div class="gauge-wrap">
-    <div class="gauge-ring"></div>
+    <div class="gauge-ring" style="background:{conic};{pulse_anim}"></div>
     <div class="gauge-center">
-      <div class="gauge-pct">{risk_pct:.0f}<span class="gauge-sign">%</span></div>
-      <div class="gauge-tier">{tier_icon} {tier_txt}</div>
+      <div class="gauge-pct" style="color:{label_col};filter:drop-shadow(0 0 12px {glow});">
+        {risk_pct:.0f}<span class="gauge-sign">%</span>
+      </div>
+      <div class="gauge-tier" style="color:{label_col};">{tier_icon} {tier_txt}</div>
     </div>
   </div>
+
   <div class="scale-row">
     <span>0%</span><span>RISK SCORE</span><span>100%</span>
   </div>
 
-  <!-- Organ impact grid -->
   <div class="cards-grid">
-    {cards_html}
+    {cards}
   </div>
 
-</body>
-</html>"""
-
-    return html
+</div>"""
 
 
 # ── Prediction ────────────────────────────────────────────────────────────────
@@ -442,7 +250,7 @@ if submitted:
         cp=cp, chol=chol, trestbps=trestbps,
         thalach=thalach, oldpeak=oldpeak, ca=ca
     )
-    components.html(viz_html, height=680, scrolling=False)
+    st.markdown(viz_html, unsafe_allow_html=True)
 
     # ── Text result card ──
     if prediction == 1:
